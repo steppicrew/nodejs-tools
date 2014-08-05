@@ -24,7 +24,7 @@ var _segments= function( key, levels ) {
     var md5= _md5(key);
     var result= [];
     var i= 0;
-    while ( --levels > 0 ) {
+    while ( levels-- > 0 ) {
         result.push(md5.substring(i, i + 3));
         i+= 3;
     }
@@ -59,8 +59,8 @@ var LargeObject= function( init, levels ) {
         levels= init || 1;
         init= undefined;
     }
-    if ( levels < 2 ) levels= 2;
-    if ( levels > 12 ) levels= 12;
+    if ( levels < 1 ) levels= 1;
+    if ( levels > 11 ) levels= 11;
 
     var data= {};
 
