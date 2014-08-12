@@ -43,4 +43,10 @@ Object.keys(x).forEach(function(key) { ... })
 // delete
 delete x['foo'];
 delete x.bar;
+
+// to iterate over all elements, with possibility to break (if function's result === false)
+x('forEach', function( name, value ) { ... if ( value === 'break') return false; });
+
+// test if object is empty
+x('empty');
 ```
