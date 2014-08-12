@@ -109,6 +109,12 @@ var LargeObject= function( init, levels ) {
 };
 
 var LargeObjectProxy= function( init, levels ) {
+    if ( typeof Proxy === 'undefined' ) {
+        console.error('Proxy does not exist. Try starting node with parameter --harmony!');
+        console.error('Using fallback with simple objects');
+        return init;
+    }
+
     if ( arguments.length < 2 ) {
         levels= init || 1;
         init= undefined;
@@ -150,3 +156,4 @@ var LargeObjectProxy= function( init, levels ) {
 
 exports.LargeObject= LargeObject;
 exports.LargeObjectProxy= LargeObjectProxy;
+
