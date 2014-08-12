@@ -8,16 +8,26 @@ var _md5= function( key ) {
     return hash.digest('hex');
 };
 
-var _forEach= function( data, level, fn ) {
+var __forEach= function( data, level, fn ) {
     if ( level ) {
         for ( var key in data ) {
-            _forEach(data[key], level - 1, fn);
+            if ( __forEach(data[key], level - 1, fn) === false ) {
+                return false;
+            }
         }
         return;
     }
-    for ( var key in data ) {
-        fn(key, data[key]);
-    }
+    return fn(data);
+};
+
+var _forEach= function( data, level, fn ) {
+    return __forEach(data, level, function( data ) {
+        for ( var key in data ) {
+            if ( fn(key, data[key]) === false ) {
+                return false;
+            }
+        }
+    });
 };
 
 var _segments= function( key, levels ) {
@@ -54,13 +64,30 @@ var _delete= function( data, segs, key ) {
     if ( data[seg] ) return _delete(data[seg], segs, key);
 };
 
-var _keys= function() {
+
+// push version of keys
+var _keys_push= function( data, levels ) {
+// var time= process.hrtime();
     var keys= [];
-    _forEach(data, levels, function( name ) {
-        keys.push(name);
+    _forEach(data, levels, function( key ) {
+        keys.push(key)
     });
+// console.log('keys generate took', process.hrtime(time));
     return keys;
 };
+
+// concat version of keys
+var _keys_concat= function( data, levels ) {
+// var time= process.hrtime();
+    var keys= [];
+    __forEach(data, levels, function( data ) {
+        keys= keys.concat(Object.keys(data));
+    });
+// console.log('keys generate took', process.hrtime(time));
+    return keys;
+};
+
+var _keys= _keys_push;
 
 var LargeObject= function( init, levels ) {
     if ( arguments.length < 2 ) {
@@ -91,7 +118,7 @@ var LargeObject= function( init, levels ) {
     };
 
     lo.keys= function() {
-        return _keys(data);
+        return _keys(data, levels);
     };
 
     if ( init ) {
@@ -124,10 +151,14 @@ var LargeObjectProxy= function( init, levels ) {
 
     var data= {};
 
-    var proxy= Proxy.create({
+    var keys= function() {
+        return _keys(data, levels);
+    };
+
+    var proxy= Proxy.createFunction({
         getOwnPropertyDescriptor: function () {},
-        getOwnPropertyNames: _keys,
-        getPropertyNames: _keys,
+        getOwnPropertyNames: keys,
+        getPropertyNames: keys,
         delete: function( name ) {
             return _delete(data, _segments(name, levels), name);
         },
@@ -141,8 +172,15 @@ var LargeObjectProxy= function( init, levels ) {
             _set(data, _segments(name, levels), name, value);
             return true;
         },
-        enumerate: _keys,
-        keys: _keys,
+        enumerate: keys,
+        keys: keys,
+    }, function( arg ) {
+        switch ( arg ) {
+            case 'forEach': return _forEach(data, arguments[1]);
+            case 'empty': return __forEach(data, levels, function( data ) {
+                return Object.keys(data).length === 0;
+            }) !== false;
+        }
     });
 
     if ( init ) {
