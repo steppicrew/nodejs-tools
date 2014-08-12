@@ -174,9 +174,9 @@ var LargeObjectProxy= function( init, levels ) {
         },
         enumerate: keys,
         keys: keys,
-    }, function( arg ) {
+    }, function( arg, arg1 ) {
         switch ( arg ) {
-            case 'forEach': return _forEach(data, levels, arguments[1]);
+            case 'forEach': return _forEach(data, levels, arg1);
             case 'empty':
                 return __forEach(data, levels, function( data ) {
                     return Object.keys(data).length === 0;
