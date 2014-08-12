@@ -54,6 +54,14 @@ var _delete= function( data, segs, key ) {
     if ( data[seg] ) return _delete(data[seg], segs, key);
 };
 
+var _keys= function() {
+    var keys= [];
+    _forEach(data, levels, function( name ) {
+        keys.push(name);
+    });
+    return keys;
+};
+
 var LargeObject= function( init, levels ) {
     if ( arguments.length < 2 ) {
         levels= init || 1;
@@ -72,17 +80,19 @@ var LargeObject= function( init, levels ) {
 
     lo.forEach= function( fn ) {
         return _forEach(data, levels, fn);
-    }
+    };
 
     lo.has= function( key ) {
         return _get(data, _segments(key, levels), key, true);
-    }
+    };
 
     lo.delete= function( key ) {
         return _delete(data, _segments(key, levels), key);
-    }
+    };
 
-    lo._data= data;
+    lo.keys= function() {
+        return _keys(data);
+    };
 
     if ( init ) {
         if ( typeof init === 'function' ) {
@@ -98,5 +108,45 @@ var LargeObject= function( init, levels ) {
     return lo;
 };
 
-exports.LargeObject= LargeObject;
+var LargeObjectProxy= function( init, levels ) {
+    if ( arguments.length < 2 ) {
+        levels= init || 1;
+        init= undefined;
+    }
+    if ( levels < 1 ) levels= 1;
+    if ( levels > 11 ) levels= 11;
 
+    var data= {};
+
+    var proxy= Proxy.create({
+        getOwnPropertyDescriptor: function () {},
+        getOwnPropertyNames: _keys,
+        getPropertyNames: _keys,
+        delete: function( name ) {
+            return _delete(data, _segments(name, levels), name);
+        },
+        has: function( name ) {
+            return _get(data, _segments(name, levels), name, true);
+        },
+        get: function( receiver, name ) {
+            return _get(data, _segments(name, levels), name, false);
+        },
+        set: function( receiver, name, value ) {
+            _set(data, _segments(name, levels), name, value);
+            return true;
+        },
+        enumerate: _keys,
+        keys: _keys,
+    });
+
+    if ( init ) {
+        for ( var key in init ) {
+            proxy[key]= init[key];
+        }
+    };
+
+    return proxy;
+};
+
+exports.LargeObject= LargeObject;
+exports.LargeObjectProxy= LargeObjectProxy;
